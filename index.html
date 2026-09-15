@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Informativo | Comunidad de Madrid</title>
+    
+    <!-- Hoja de estilos de Leaflet para el mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        /* =========================================
+           DISEÑO PREMIUM EDITORIAL
+           ========================================= */
+        :root {
+            --color-fondo: #f8f9fa; /* Un gris blanquecino muy elegante */
+            --color-texto: #444444;
+            --color-titular: #0a1128; /* Azul noche muy oscuro, casi negro */
+            --color-acento: #b58d3d; /* Dorado/bronce para los detalles */
+            --color-borde: #e8e8e8;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Helvetica Neue', Arial, sans-serif; /* Tipografía limpia para textos largos */
+            background-color: var(--color-fondo);
+            color: var(--color-texto);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Cabecera Centrada y Elegante */
+        header {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-bottom: 1px solid var(--color-borde);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02); /* Sombra casi imperceptible */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centramos el texto para un toque clásico */
+            text-align: center;
+            z-index: 10;
+        }
+
+        header h1 {
+            margin: 0;
+            /* Usamos fuentes clásicas de alta legibilidad */
+            font-family: 'Playfair Display', 'Didot', 'Georgia', serif; 
+            font-size: 2.8rem;
+            color: var(--color-titular);
+            font-weight: 400;
+            letter-spacing: 1.5px;
+        }
+
+        header p {
+            margin: 12px 0 0 0;
+            font-size: 0.85rem;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 600;
+        }
+
+        /* Contenedor principal */
+        #main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Contenedor del Mapa */
+        #map-container {
+            flex: 2;
+            position: relative;
+            border-right: 1px solid var(--color-borde);
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background-color: #e5e3df;
+        }
+
+        /* Panel Lateral de Noticias con más "aire" */
+        #news-sidebar {
+            flex: 1;
+            background-color: #ffffff;
+            padding: 50px 40px; /* Mucho más espacio interior */
+            overflow-y: auto;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.03);
+        }
+
+        /* Título del panel */
+        #news-sidebar h2 {
+            font-family: 'Playfair Display', 'Didot', 'Georgia', serif;
+            font-size: 1.4rem;
+            margin-top: 0;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--color-acento); /* Línea dorada sutil */
+            color: var(--color-titular);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Estilo de los artículos periodísticos */
+        .news-article {
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid var(--color-borde);
+        }
+
+        /* Enlaces de los titulares (Sin subrayado forzado) */
+        .headline-link, 
+        .headline-link:hover, 
+        .headline-link:focus, 
+        .headline-link:active {
+            text-decoration: none !important; /* El !important obliga al navegador a quitar el subrayado */
+            display: block;
+            outline: none;
+        }
+
+        .headline-link h3 {
+            font-family: 'Playfair Display', 'Didot', 'Georgia', serif;
+            font-size: 1.5rem;
+            margin: 0 0 12px 0;
+            color: var(--color-titular);
+            line-height: 1.35;
+            font-weight: 600;
+            text-decoration: none !important;
+            transition: color 0.3s ease;
+        }
+
+        /* Efecto al pasar el ratón por encima del titular */
+        .headline-link:hover h3 {
+            color: var(--color-acento); /* Cambia al color dorado */
+            text-decoration: none !important; /* Nos aseguramos de que tampoco se subraye al pasar el ratón */
+        }
+
+        .news-article .date {
+            font-size: 0.75rem;
+            color: var(--color-acento);
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .news-article p {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #555555;
+            margin: 0;
+        }
+
+        .placeholder-text {
+            color: #999999;
+            font-style: italic;
+            font-family: 'Georgia', serif;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        /* Personalización de la barra de scroll para que parezca de revista */
+        #news-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        #news-sidebar::-webkit-scrollbar-track {
+            background: #fcfcfc; 
+        }
+        #news-sidebar::-webkit-scrollbar-thumb {
+            background: var(--color-acento); 
+            border-radius: 10px;
+        }
+
+        /* =========================================
+           DISEÑO RESPONSIVE (MÓVILES Y TABLETS)
+           ========================================= */
+        @media screen and (max-width: 768px) {
+            /* Apilamos el mapa y las noticias en vertical */
+            #main-container {
+                flex-direction: column;
+            }
+
+            /* El mapa pasa a ocupar la mitad superior de la pantalla (50% del alto) */
+            #map-container {
+                flex: none;
+                height: 50vh; 
+                border-right: none;
+                border-bottom: 2px solid var(--color-borde);
+            }
+
+            /* Las noticias ocupan la mitad inferior (50% del alto) */
+            #news-sidebar {
+                flex: none;
+                height: 50vh; 
+                padding: 20px;
+            }
+
+            /* Ajustamos el tamaño de la cabecera para que no ocupe tanto espacio en móvil */
+            header {
+                padding: 15px 20px;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            header p {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Observatorio Informativo</h1>
+        <p>Actualidad de los municipios de la Comunidad de Madrid</p>
+    </header>
+
+    <div id="main-container">
+        <!-- Mapa -->
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+
+        <!-- Panel Lateral de Noticias -->
+        <aside id="news-sidebar">
+            <h2 id="municipio-titulo">Visión General</h2>
+            <div id="news-content">
+                <p class="placeholder-text">Seleccione un municipio en el mapa para visualizar las últimas noticias correspondientes a esa área.</p>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Script de Leaflet para el mapa -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // 1. INICIALIZAR EL MAPA
+        // Centrado en la zona noroeste de Madrid (Sierra) para ver mejor tus municipios
+        const map = L.map('map').setView([40.6200, -4.0000], 11);
+
+        // 2. AÑADIR LA CAPA BASE Y LAS ETIQUETAS
+        // Capa 1: El fondo gris (Geografía)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+            maxZoom: 16
+        }).addTo(map);
+
+        // Capa 2: Los nombres de los lugares (Referencia)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 16
+        }).addTo(map);
+
+       // 3. FUNCIÓN PARA ACTUALIZAR NOTICIAS AL HACER CLIC
+        function mostrarNoticias(nombreMunicipio) {
+            const tituloPanel = document.getElementById('municipio-titulo');
+            const contenidoNoticias = document.getElementById('news-content');
+
+            // Actualizamos el título con el nombre del municipio
+            tituloPanel.textContent = `Actualidad: ${nombreMunicipio}`;
+
+            // Mostramos solo la fecha y el titular con un enlace que abre en otra pestaña
+            contenidoNoticias.innerHTML = `
+                <article class="news-article">
+                    <div class="date">PUBLICADO HOY</div>
+                    <!-- El target="_blank" abre la noticia en una pestaña nueva -->
+                    <!-- En el 'href' pondrás la ruta a la página de tu noticia -->
+                    <a href="pagina-de-la-noticia-1.html" target="_blank" class="headline-link">
+                        <h3>El ayuntamiento de ${nombreMunicipio} aprueba los nuevos presupuestos locales</h3>
+                    </a>
+                </article>
+                
+                <article class="news-article">
+                    <div class="date">PUBLICADO AYER</div>
+                    <a href="pagina-de-la-noticia-2.html" target="_blank" class="headline-link">
+                        <h3>Arrancan las fiestas patronales con una participación de récord en ${nombreMunicipio}</h3>
+                    </a>
+                </article>
+            `;
+        }
+
+       // 4. AÑADIR TUS MUNICIPIOS (Zonas de clic invisibles fijas)
+        
+        const municipiosSierra = [
+            { nombre: "Collado Villalba", lat: 40.6433, lng: -3.9918 },
+            { nombre: "Guadarrama", lat: 40.6725, lng: -4.0883 },
+            { nombre: "Alpedrete", lat: 40.6586, lng: -4.0194 },
+            { nombre: "Galapagar", lat: 40.5786, lng: -4.0044 },
+            { nombre: "Torrelodones", lat: 40.5764, lng: -3.9281 },
+            { nombre: "Moralzarzal", lat: 40.6806, lng: -3.9778 },
+            { nombre: "San Lorenzo de El Escorial", lat: 40.5933, lng: -4.1481 },
+            { nombre: "El Escorial", lat: 40.5833, lng: -4.1292 },
+            { nombre: "Robledo de Chavela", lat: 40.5008, lng: -4.2394 },
+            { nombre: "Cercedilla", lat: 40.7417, lng: -4.0622 },
+            { nombre: "Navacerrada", lat: 40.7297, lng: -4.0153 },
+            { nombre: "Los Molinos", lat: 40.7144, lng: -4.0736 },
+            { nombre: "Becerril de la Sierra", lat: 40.7075, lng: -3.9931 },
+            { nombre: "Collado Mediano", lat: 40.6936, lng: -4.0256 },
+            { nombre: "El Boalo-Cerceda-Mataelpino", lat: 40.7183, lng: -3.9167 },
+            { nombre: "Hoyo de Manzanares", lat: 40.6225, lng: -3.9078 },
+            { nombre: "Colmenarejo", lat: 40.5583, lng: -4.0186 },
+            { nombre: "Valdemorillo", lat: 40.5011, lng: -4.0672 },
+            { nombre: "Las Rozas de Madrid", lat: 40.4925, lng: -3.8744 }
+        ];
+
+        municipiosSierra.forEach(mun => {
+            // Creamos un círculo invisible sobre la ubicación exacta del municipio
+            const zonaInvisible = L.circleMarker([mun.lat, mun.lng], {
+                radius: 20,             // Tamaño de la zona de clic
+                color: 'transparent',   // Borde invisible
+                fillColor: 'transparent', // Relleno invisible
+                fillOpacity: 0          // Totalmente transparente
+            }).addTo(map);
+            
+            // Hacemos que el cursor cambie a la "mano" para indicar que es interactivo
+            zonaInvisible.on('mouseover', function() {
+                document.getElementById('map').style.cursor = 'pointer';
+            });
+            
+            zonaInvisible.on('mouseout', function() {
+                document.getElementById('map').style.cursor = '';
+            });
+
+            // Al hacer clic, carga las noticias del municipio en el panel
+            zonaInvisible.on('click', function() {
+                mostrarNoticias(mun.nombre);
+            });
+        });
+    </script>
+</body>
+</html>
