@@ -38,10 +38,22 @@
             border-bottom: 1px solid var(--color-borde);
             box-shadow: 0 4px 20px rgba(0,0,0,0.02); /* Sombra casi imperceptible */
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
             align-items: center; /* Centramos el texto para un toque clásico */
+            gap: 20px;
             text-align: center;
             z-index: 10;
+        }
+
+        .header-logo {
+            height: 70px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .header-text {
+            text-align: center;
         }
 
         header h1 {
@@ -201,6 +213,11 @@
             /* Ajustamos el tamaño de la cabecera para que no ocupe tanto espacio en móvil */
             header {
                 padding: 15px 20px;
+                gap: 12px;
+            }
+
+            .header-logo {
+                height: 45px;
             }
 
             header h1 {
@@ -216,8 +233,11 @@
 <body>
 
     <header>
-        <h1>Mapea Madrid Sierra</h1>
-        <p>Actualidad de los municipios de la sierra de Madrid</p>
+        <img src="logo.png" alt="Logo Mapea Madrid Sierra" class="header-logo">
+        <div class="header-text">
+            <h1>Mapea Madrid Sierra Noroeste</h1>
+            <p>Actualidad de los municipios de la sierra de Madrid</p>
+        </div>
     </header>
 
     <div id="main-container">
@@ -255,32 +275,74 @@
             maxZoom: 16
         }).addTo(map);
 
-       // 3. FUNCIÓN PARA ACTUALIZAR NOTICIAS AL HACER CLIC
+// 3. BASE DE DATOS DE NOTICIAS POR MUNICIPIO
+        // IMPORTANTE: El nombre del municipio debe coincidir exactamente con el de la lista de abajo (municipiosSierra).
+        const noticiasPorMunicipio = {
+            "Collado Villalba": [
+                {
+                    fecha: "23 NOVIEMBRE 2026",
+                    titular: "El Ayuntamiento de Collado Villalba aprueba el plan de reforma del centro urbano",
+                    enlace: "noticias/villalba-reforma.html" // Puede ser un archivo tuyo o un enlace externo https://...
+                },
+                {
+                    fecha: "20 NOVIEMBRE 2026",
+                    titular: "Aumenta la frecuencia de autobuses hacia Moncloa en hora punta",
+                    enlace: "noticias/villalba-autobuses.html"
+                }
+            ],
+            "Guadarrama": [
+                {
+                    fecha: "22 NOVIEMBRE 2026",
+                    titular: "Guadarrama inaugura la nueva temporada de rutas guiadas por la sierra",
+                    enlace: "https://www.fcbarcelona.es/es/entradas/vip/vip-futbol?ext=SEM_26-27_P03-14noticias/guadarrama-rutas.html"
+                }
+            ],
+            "Alpedrete": [],
+            "Galapagar": [],
+            "Torrelodones": [],
+            "Moralzarzal": [],
+            "San Lorenzo de El Escorial": [],
+            "El Escorial": [],
+            "Robledo de Chavela": [],
+            "Cercedilla": [],
+            "Navacerrada": [],
+            "Los Molinos": [],
+            "Becerril de la Sierra": [],
+            "Collado Mediano": [],
+            "El Boalo-Cerceda-Mataelpino": [],
+            "Hoyo de Manzanares": [],
+            "Colmenarejo": [],
+            "Valdemorillo": [],
+            "Las Rozas de Madrid": []
+        };
+
+        // FUNCIÓN PARA ACTUALIZAR NOTICIAS AL HACER CLIC
         function mostrarNoticias(nombreMunicipio) {
             const tituloPanel = document.getElementById('municipio-titulo');
             const contenidoNoticias = document.getElementById('news-content');
 
-            // Actualizamos el título con el nombre del municipio
             tituloPanel.textContent = `Actualidad: ${nombreMunicipio}`;
 
-            // Mostramos solo la fecha y el titular con un enlace que abre en otra pestaña
-            contenidoNoticias.innerHTML = `
+            // Buscamos las noticias de ese pueblo en el diccionario
+            const noticias = noticiasPorMunicipio[nombreMunicipio] || [];
+
+            // Si todavía no has añadido noticias a ese municipio, sale un aviso elegante
+            if (noticias.length === 0) {
+                contenidoNoticias.innerHTML = `
+                    <p class="placeholder-text">No hay noticias publicadas recientemente para ${nombreMunicipio}.</p>
+                `;
+                return;
+            }
+
+            // Generamos automáticamente el HTML de cada noticia
+            contenidoNoticias.innerHTML = noticias.map(noticia => `
                 <article class="news-article">
-                    <div class="date">PUBLICADO HOY</div>
-                    <!-- El target="_blank" abre la noticia en una pestaña nueva -->
-                    <!-- En el 'href' pondrás la ruta a la página de tu noticia -->
-                    <a href="pagina-de-la-noticia-1.html" target="_blank" class="headline-link">
-                        <h3>El ayuntamiento de ${nombreMunicipio} aprueba los nuevos presupuestos locales</h3>
+                    <div class="date">${noticia.fecha}</div>
+                    <a href="${noticia.enlace}" target="_blank" rel="noopener noreferrer" class="headline-link">
+                        <h3>${noticia.titular}</h3>
                     </a>
                 </article>
-                
-                <article class="news-article">
-                    <div class="date">PUBLICADO AYER</div>
-                    <a href="pagina-de-la-noticia-2.html" target="_blank" class="headline-link">
-                        <h3>Arrancan las fiestas patronales con una participación de récord en ${nombreMunicipio}</h3>
-                    </a>
-                </article>
-            `;
+            `).join('');
         }
 
        // 4. AÑADIR TUS MUNICIPIOS (Zonas de clic invisibles fijas)
